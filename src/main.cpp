@@ -29,26 +29,31 @@ void readCodeuse()
 
 
 //PID SETTINGS AND VALUES
-volatile int32_t output=0;
-volatile int32_t setPoint=25;
-volatile int32_t last_error=0;
-volatile int32_t derivative_error=0;
-volatile int32_t integral_error=0;
+volatile double output=0;
+volatile double setPoint=25;
+volatile double last_error=0;
+volatile double derivative_error=0;
+volatile double integral_error=0;
 int32_t espilon_output=0;
+
 float kp=3.51/2; //Oscilaltions à 3.5+ -> *1/2
 float ki=0.2;
 float kd=0;
 
 int32_t compute_PID(int32_t input){
-	int32_t error=setPoint-input;
+	int32_t error=(int32_t)(setPoint-input);
 	derivative_error=error-last_error;
-	integral_error+=error;
+	integral_error+=ki*error;
+	//Anti windup
+	if(integral_error>MAX_PWM) integral_error=MAX_PWM;
+	else if(integral_error<-MAX_PWM) integral_error=-MAX_PWM;
 	last_error=error;
-	int32_t result=(int32_t)(kp*error+ki*integral_error+kd*derivative_error);
-	if(result>127) result=127;
-	else if(result<-127) result=-127;
+	int32_t result=(int32_t)(kp*error+integral_error+kd*derivative_error);
+	//Limitation à des valeurs 8bits
+	if(result>MAX_PWM) result=MAX_PWM;
+	else if(result<-MAX_PWM) result=-MAX_PWM;
 	output=result;
-	return output;
+	return (int32_t)output;
 }
 
 /*
