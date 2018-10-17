@@ -1,9 +1,10 @@
 #include <Arduino.h>
-#include "TimerOne.h"
+#include <IntervalTimer.h>
 
-#define INA 		7
-#define INB 		6
-#define PWM 	5
+#define SERIAL_RX_BUFFER_SIZE	64
+#define INA 		4
+#define INB 		5
+#define PWM 	6
 #define SEL0 	11
 #define CS 		12
 #define LED 		13
@@ -30,15 +31,15 @@ void readCodeuse()
 
 //PID SETTINGS AND VALUES
 volatile double output=0;
-volatile double setPoint=25;
+volatile double setPoint=0;
 volatile double last_error=0;
 volatile double derivative_error=0;
 volatile double integral_error=0;
 int32_t espilon_output=0;
 
-float kp=3.51/2; //Oscilaltions à 3.5+ -> *1/2
-float ki=0.2;
-float kd=0;
+float kp=5; //Oscilaltions à 3.5+ -> *1/2
+float ki=0.1;
+float kd=1;
 
 int32_t compute_PID(int32_t input){
 	int32_t error=(int32_t)(setPoint-input);
@@ -47,6 +48,9 @@ int32_t compute_PID(int32_t input){
 	//Anti windup
 	if(integral_error>MAX_PWM) integral_error=MAX_PWM;
 	else if(integral_error<-MAX_PWM) integral_error=-MAX_PWM;
+	if(derivative_error==0 && error<2){
+		integral_error=0;
+	}
 	last_error=error;
 	int32_t result=(int32_t)(kp*error+integral_error+kd*derivative_error);
 	//Limitation à des valeurs 8bits
@@ -67,10 +71,12 @@ enum DIRECTION{
 
 void set_direction(DIRECTION dir){
 	if(dir==CLOCKWISE){
+		digitalWrite(LED, HIGH);
 		digitalWrite(INA, HIGH);
 		digitalWrite(INB, LOW);
 	}
 	else{
+		digitalWrite(LED, LOW);
 		digitalWrite(INA, LOW);
 		digitalWrite(INB, HIGH);
 	}
@@ -93,7 +99,6 @@ void run_motor(int32_t pwm){
  * COMMUNICATION
  */
 
-bool waiting_data=false;
 char order[SERIAL_RX_BUFFER_SIZE];
 
 //Retourne vrai si les deux chaines sont égales
@@ -105,44 +110,37 @@ bool inline compare_strings(const char *first, const char *second){
 bool inline read_char(char & buffer)
 {
 	buffer = Serial.read();
-	return (buffer != '\r' && buffer != '\n');
+//	Serial.println((int)buffer);
+	return (buffer != 10 && buffer!=0);
 }
 
 //Lit une chaine dans order
 bool read_string(){
 	if(Serial.available()>0){
 		memset(order, 0, sizeof(order));
-		Serial.print("READING: ");
+//		Serial.print("READING: ");
 		char c=0;
 		uint8_t i=0;
 		while(read_char(c) && i<SERIAL_RX_BUFFER_SIZE){
-			order[i]=c;
-			i++;
+			if(c!=-1) {
+				order[i] = c;
+				i++;
+			}
 		}
 		if(Serial.peek()==10) {
 			Serial.read();
 		}
-		if(Serial.peek()==13){
-			Serial.read();
-			Serial.read();
-		}
-		Serial.println();
 		return !compare_strings(order, "");
 	}
 	return false;
 }
-TimerOne timer;
+IntervalTimer timer;
 void asservissement(){
-	static 	uint32_t stop_timer=micros();
-
 	run_motor(compute_PID(encoder_pos));
-	if(encoder_pos==setPoint){
-
-	}
 }
 
 void setup() {
-	Serial.begin(115200);
+	Serial.begin(9600);
 	// pinMode H bridge
 	pinMode(LED, OUTPUT);
 	pinMode(INA,OUTPUT);
@@ -164,8 +162,9 @@ void setup() {
 	digitalWrite(SEL0,LOW);
 	attachInterrupt(digitalPinToInterrupt(CHANA), readCodeuse, RISING);
 	Serial.println("SETUP OK");
-	timer.initialize(10000);
-	timer.attachInterrupt(asservissement);
+	timer.begin(asservissement, 10000);
+	analogWriteRes(8);
+	analogWriteFrequency(PWM, 20000);
 //	Serial.setTimeout(5000);
 }
 
@@ -173,7 +172,7 @@ void setup() {
 
 void loop() {
 	static uint32_t last_update=millis();
-	if(millis()-last_update>100) {
+	if(millis()-last_update>1000) {
 //		run_motor(compute_PID(encoder_pos));
 		Serial.print("SETPOINT: ");Serial.print(setPoint);
 		Serial.print(" PWM: ");Serial.println(output);
@@ -182,27 +181,46 @@ void loop() {
 		last_update=millis();
 	}
 	static uint32_t last_print=millis();
-	if(millis()-last_print>100) {
+	if(millis()-last_print>1000) {
 		Serial.print("POS ");
 		Serial.println(encoder_pos);
 		last_print=millis();
 	}
-//	if(read_string()) {
-//		if(!waiting_data) {
-//			if (compare_strings(order, "r")) {//reset
-//				encoder_pos = 0;
-//				setPoint = 0;
-//				last_error = 0;
-//				derivative_error = 0;
-//				integral_error = 0;
-//			} else if (compare_strings(order, "p")) {
-//				waiting_data = true;
-//				setPoint = Serial.parseInt();
-//				Serial.println(setPoint);
-//			}
-//		}
-//		else{
-//
-//		}
-//	}
+	if(read_string()) {
+		Serial.print("ORDER ");Serial.println(order);
+		if (compare_strings(order, "r")) {//reset
+			Serial.println("Reseting position and PID");
+			setPoint = encoder_pos;
+			last_error = 0;
+			derivative_error = 0;
+			integral_error = 0;
+		} else if (compare_strings(order, "p")) {
+			Serial.println("Enter SetPoint");
+			Serial.setTimeout(5000);
+			setPoint = Serial.parseInt();
+			Serial.setTimeout(50);
+			Serial.println(setPoint);
+		}
+		else if(compare_strings(order, "kp")){
+			Serial.println("Enter Kp");
+			Serial.setTimeout(10000);
+			kp= Serial.parseFloat();
+			Serial.setTimeout(50);
+			Serial.println(setPoint);
+		}
+		else if(compare_strings(order, "ki")){
+			Serial.println("Enter Ki");
+			Serial.setTimeout(10000);
+			ki= Serial.parseFloat();
+			Serial.setTimeout(50);
+			Serial.println(setPoint);
+		}
+		else if(compare_strings(order, "kd")){
+			Serial.println("Enter Kd");
+			Serial.setTimeout(10000);
+			kd= Serial.parseFloat();
+			Serial.setTimeout(50);
+			Serial.println(setPoint);
+		}
+	}
 }
