@@ -111,7 +111,6 @@ bool inline compare_strings(const char *first, const char *second){
 bool inline read_char(int8_t & buffer)
 {
 	buffer = (int8_t)Serial.read();
-//	Serial.println((int)buffer);
 	return (buffer != 10);	//Stop si retour à la ligne ou 0
 }
 
@@ -134,6 +133,7 @@ bool read_string(){
 	}
 	return false;
 }
+
 IntervalTimer timer;
 void asservissement(){
 	run_motor(compute_PID(encoder_pos));
