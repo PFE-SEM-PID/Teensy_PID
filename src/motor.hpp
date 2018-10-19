@@ -16,9 +16,9 @@
 #define PERIODE_ASSERV	1000000/FREQ_ASSERV	//us
 //ASSERVISSEMENT
 //CONSTANTES & PID
-float kp=4.8;
-float ki=0.8;
-float kd=6;
+float kp=4;
+float ki=1;
+float kd=7;
 
 volatile double output=0;
 volatile double setPoint=0;
