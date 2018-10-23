@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <IntervalTimer.h>
 #include "encoder.hpp"
+#include "pid.hpp"
 //PINS & LIMITS
 #define INA 		4
 #define INB 		5
@@ -16,37 +17,17 @@
 #define PERIODE_ASSERV	1000000/FREQ_ASSERV	//us
 //ASSERVISSEMENT
 //CONSTANTES & PID
-float kp=4;
-float ki=1;
-float kd=7;
+float pos_kp=4;
+float pos_ki=1;
+float pos_kd=7;
+float speed_kp=0.2;
+float speed_ki=0.08;
+float speed_kd=0.01;
 
-volatile double output=0;
-volatile double setPoint=0;
-volatile double error=0;
-volatile double last_error=0;
-volatile double derivative_error=0;
-volatile double integral_error=0;
-volatile int32_t last_input=0;
-int32_t espilon_output=0;
+bool speed_controlled=false;
 
-int32_t PID_compute(int32_t input){
-	error=setPoint-input;
-	derivative_error=error-last_error;
-	integral_error+=ki*error;
-	last_input=input;
-	last_error=error;
-	//Anti windup
-	if(integral_error>MAX_PWM) integral_error=MAX_PWM;
-	else if(integral_error<-MAX_PWM) integral_error=-MAX_PWM;
-	if(error==0 && last_error==0){
-		integral_error=0;
-	}
-	output=kp*error+integral_error+kd*derivative_error;
-	//Limitation à des valeurs 8bits
-	if(output>MAX_PWM) output=MAX_PWM;
-	else if(output<-MAX_PWM) output=-MAX_PWM;
-	return (int32_t)output;
-}
+PID position_pid(pos_kp, pos_ki, pos_kd);
+PID speed_pid(speed_kp, speed_ki, speed_kd);
 
 void set_tuning(float* constant){
 	Serial.println("Enter constant value");
@@ -82,14 +63,23 @@ void motor_run(int32_t pwm){
 		motor_set_direction(COUNTER_CLOCKWISE);
 	}
 	pwm=abs(pwm);
-	pwm=map(pwm,0,127,0,MAX_PWM);
+//	pwm=map(pwm,0,127,0,MAX_PWM);
 //	if(pwm>MAX_PWM) pwm=MAX_PWM;
 	analogWrite(PWM, (uint16_t)pwm);
 }
 
+
 IntervalTimer timer;
 void asservissement(){
-	motor_run(PID_compute(encoder_pos));
+	if(speed_controlled) {
+		static int32_t last_pos=encoder_pos;
+		double speed=(encoder_pos-last_pos)*FREQ_ASSERV;
+		last_pos=encoder_pos;
+		motor_run(speed_pid.compute(static_cast<int32_t>(speed)));
+	}
+	else{
+		motor_run(position_pid.compute(encoder_pos));
+	}
 }
 
 void motor_init(){
@@ -112,35 +102,54 @@ void motor_init(){
 //Utilitaires
 void motor_print_status(){
 	Serial.print(millis());	Serial.print(' ');
-	Serial.print(setPoint);Serial.print(' ');
-	Serial.print(encoder_pos);Serial.print(' ');
-	Serial.print(output);Serial.print(' ');
-	Serial.print(derivative_error);Serial.print(' ');
-	Serial.println(integral_error);
+	if(speed_controlled) {
+		Serial.print(speed_pid.get_setpoint());
+		Serial.print(' ');
+		Serial.print(encoder_pos);
+		Serial.print(' ');
+		Serial.print(speed_pid.get_output());
+		Serial.print(' ');
+		Serial.print(speed_pid.get_derivative_error());
+		Serial.print(' ');
+		Serial.println(speed_pid.get_integral_error());
+	}
+	else{
+		Serial.print(position_pid.get_setpoint());
+		Serial.print(' ');
+		Serial.print(encoder_pos);
+		Serial.print(' ');
+		Serial.print(position_pid.get_output());
+		Serial.print(' ');
+		Serial.print(position_pid.get_derivative_error());
+		Serial.print(' ');
+		Serial.println(position_pid.get_integral_error());
+	}
 }
 
 void motor_reset_pos(){
-	Serial.println("Reseting position and PID");
+//	Serial.println("Reseting position and PID");
 	noInterrupts();
 	encoder_pos=0;
-	setPoint = 0;
-	last_error = 0;
-	derivative_error = 0;
-	integral_error = 0;
+	if(speed_controlled){
+		speed_pid.reset_errors();
+		speed_pid.set_set_point(0);
+	}
+	else{
+		position_pid.reset_errors();
+		position_pid.set_set_point(0);
+	}
 	interrupts();
 }
 
-void PID_set_setpoint(int32_t new_setpoint){
-	setPoint=new_setpoint;
+void PID_set_position_setpoint(int32_t new_setpoint){
+	position_pid.set_set_point(new_setpoint);
 }
 
 
 void PID_read_setpoint(){
-	Serial.println("Enter SetPoint");
 	Serial.setTimeout(5000);
-	PID_set_setpoint(Serial.parseInt());
+	PID_set_position_setpoint(Serial.parseInt());
 	Serial.setTimeout(50);
-	Serial.println(setPoint);
 }
 
 

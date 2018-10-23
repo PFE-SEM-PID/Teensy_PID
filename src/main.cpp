@@ -29,19 +29,19 @@ void loop() {
 		} else if (compare_strings(order, "p")) {
 			PID_read_setpoint();
 		}
-		else if(compare_strings(order, "kp")){
-			set_tuning(&kp);
+		else if(compare_strings(order, "pos_kp")){
+			set_tuning(&pos_kp);
 		}
 		else if(compare_strings(order, "ki")){
-			set_tuning(&ki);
+			set_tuning(&pos_ki);
 		}
 		else if(compare_strings(order, "kd")){
-			set_tuning(&kd);
+			set_tuning(&pos_kd);
 		}
 		else if(compare_strings(order, "print")){
-			Serial.print("Kp=");Serial.println(kp);
-			Serial.print("Ki=");Serial.println(ki);
-			Serial.print("Kd=");Serial.println(kd);
+			Serial.print("Kp=");Serial.println(pos_kp);
+			Serial.print("Ki=");Serial.println(pos_ki);
+			Serial.print("Kd=");Serial.println(pos_kd);
 		}
 		else if(compare_strings(order, "start")){
 			recording=true;
@@ -53,13 +53,13 @@ void loop() {
 
 	static uint32_t moving_time=millis();
 	static bool state=false;
-	if(millis()-moving_time>2000){
+	if(millis()-moving_time>100000000){
 		if(state) {
-			PID_set_setpoint(25);
+			PID_set_position_setpoint(25);
 			state=false;
 		}
 		else{
-			PID_set_setpoint(-25);
+			PID_set_position_setpoint(-25);
 			state=true;
 		}
 		moving_time=millis();
