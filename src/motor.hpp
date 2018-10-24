@@ -26,15 +26,15 @@ float speed_kd=0.01;
 
 bool speed_controlled=false;
 
-PID position_pid(pos_kp, pos_ki, pos_kd);
-PID speed_pid(speed_kp, speed_ki, speed_kd);
+PID position_pid(&pos_kp, &pos_ki, &pos_kd);
+PID speed_pid(&speed_kp, &speed_ki, &speed_kd);
 
 void set_tuning(float* constant){
-	Serial.println("Enter constant value");
+//	Serial.println("Enter constant value");
 	Serial.setTimeout(5000);
 	*constant=Serial.parseFloat();
 	Serial.setTimeout(50);
-	Serial.print("New value:");Serial.println(*constant);
+//	Serial.print("New value:");Serial.println(*constant);
 }
 //CONTROL MOTEUR
 

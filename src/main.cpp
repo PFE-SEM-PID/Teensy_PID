@@ -13,7 +13,7 @@ void setup() {
 	motor_init();
 	encoder_init();
 
-	Serial.println("SETUP OK");
+//	Serial.println("SETUP OK");
 }
 
 void loop() {
@@ -29,7 +29,7 @@ void loop() {
 		} else if (compare_strings(order, "p")) {
 			PID_read_setpoint();
 		}
-		else if(compare_strings(order, "pos_kp")){
+		else if(compare_strings(order, "kp")){
 			set_tuning(&pos_kp);
 		}
 		else if(compare_strings(order, "ki")){
@@ -48,6 +48,9 @@ void loop() {
 		}
 		else if(compare_strings(order, "stop")){
 			recording=false;
+		}
+		else{
+//			Serial.println("ordre inconnu");
 		}
 	}
 
