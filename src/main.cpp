@@ -18,7 +18,7 @@ void setup() {
 
 void loop() {
 	static uint32_t last_print=millis();
-	if(recording && millis()-last_print>10) {
+	if(recording && millis()-last_print>=5) {
 		motor_print_status();
 		last_print=millis();
 	}
@@ -51,17 +51,17 @@ void loop() {
 		}
 	}
 
-	static uint32_t moving_time=millis();
-	static bool state=false;
-	if(millis()-moving_time>100000000){
-		if(state) {
-			PID_set_position_setpoint(25);
-			state=false;
-		}
-		else{
-			PID_set_position_setpoint(-25);
-			state=true;
-		}
-		moving_time=millis();
-	}
+//	static uint32_t moving_time=millis();
+//	static bool state=false;
+//	if(millis()-moving_time>100000000){
+//		if(state) {
+//			PID_set_position_setpoint(25);
+//			state=false;
+//		}
+//		else{
+//			PID_set_position_setpoint(-25);
+//			state=true;
+//		}
+//		moving_time=millis();
+//	}
 }

@@ -75,10 +75,10 @@ void asservissement(){
 		static int32_t last_pos=encoder_pos;
 		double speed=(encoder_pos-last_pos)*FREQ_ASSERV;
 		last_pos=encoder_pos;
-		motor_run(speed_pid.compute(static_cast<int32_t>(speed)));
+		motor_run(static_cast<int32_t>(speed_pid.compute(speed)));
 	}
 	else{
-		motor_run(position_pid.compute(encoder_pos));
+		motor_run(static_cast<int32_t>(position_pid.compute(encoder_pos)));
 	}
 }
 
