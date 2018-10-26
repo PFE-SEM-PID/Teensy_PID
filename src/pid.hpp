@@ -16,12 +16,12 @@ class PID{
 	volatile double integral_error=0;
 	volatile double last_input=0;
 public:
-	PID(float p_kp, float p_ki, float p_kd):kp(p_kp), ki(p_ki), kd(p_kd){}
+	PID(float *p_kp, float *p_ki, float *p_kd):kp(p_kp), ki(p_ki), kd(p_kd){}
 
 	double compute(double input){
 		error=setpoint-input;
 		derivative_error=error-last_error;
-		integral_error+=ki*error;
+		integral_error+=*ki*error;
 		last_input=input;
 		last_error=error;
 		//Anti windup
@@ -30,7 +30,7 @@ public:
 		if(error==0 && last_error==0){
 			integral_error=0;
 		}
-		output=kp*error+integral_error+kd*derivative_error;
+		output=*kp*error+integral_error+*kd*derivative_error;
 		//Limitation à des valeurs 8bits
 		if(output>MAX_PWM) output=MAX_PWM;
 		else if(output<-MAX_PWM) output=-MAX_PWM;
@@ -45,9 +45,9 @@ public:
 		setpoint=value;
 	}
 
-	float kp=4;
-	float ki=1;
-	float kd=7;
+	float* kp;
+	float* ki;
+	float* kd;
 
 	double get_setpoint() {
 		return setpoint;

@@ -26,15 +26,15 @@ float speed_kd=0.01;
 
 bool speed_controlled=false;
 
-PID position_pid(pos_kp, pos_ki, pos_kd);
-PID speed_pid(speed_kp, speed_ki, speed_kd);
+PID position_pid(&pos_kp, &pos_ki, &pos_kd);
+PID speed_pid(&speed_kp, &speed_ki, &speed_kd);
 
 void set_tuning(float* constant){
-	Serial.println("Enter constant value");
+//	Serial.println("Enter constant value");
 	Serial.setTimeout(5000);
 	*constant=Serial.parseFloat();
 	Serial.setTimeout(50);
-	Serial.print("New value:");Serial.println(*constant);
+//	Serial.print("New value:");Serial.println(*constant);
 }
 //CONTROL MOTEUR
 
@@ -75,10 +75,10 @@ void asservissement(){
 		static int32_t last_pos=encoder_pos;
 		double speed=(encoder_pos-last_pos)*FREQ_ASSERV;
 		last_pos=encoder_pos;
-		motor_run(speed_pid.compute(static_cast<int32_t>(speed)));
+		motor_run(static_cast<int32_t>(speed_pid.compute(speed)));
 	}
 	else{
-		motor_run(position_pid.compute(encoder_pos));
+		motor_run(static_cast<int32_t>(position_pid.compute(encoder_pos)));
 	}
 }
 

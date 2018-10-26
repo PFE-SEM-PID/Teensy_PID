@@ -13,12 +13,12 @@ void setup() {
 	motor_init();
 	encoder_init();
 
-	Serial.println("SETUP OK");
+//	Serial.println("SETUP OK");
 }
 
 void loop() {
 	static uint32_t last_print=millis();
-	if(recording && millis()-last_print>10) {
+	if(recording && millis()-last_print>=5) {
 		motor_print_status();
 		last_print=millis();
 	}
@@ -29,7 +29,7 @@ void loop() {
 		} else if (compare_strings(order, "p")) {
 			PID_read_setpoint();
 		}
-		else if(compare_strings(order, "pos_kp")){
+		else if(compare_strings(order, "kp")){
 			set_tuning(&pos_kp);
 		}
 		else if(compare_strings(order, "ki")){
@@ -49,19 +49,22 @@ void loop() {
 		else if(compare_strings(order, "stop")){
 			recording=false;
 		}
+		else{
+//			Serial.println("ordre inconnu");
+		}
 	}
 
-	static uint32_t moving_time=millis();
-	static bool state=false;
-	if(millis()-moving_time>100000000){
-		if(state) {
-			PID_set_position_setpoint(25);
-			state=false;
-		}
-		else{
-			PID_set_position_setpoint(-25);
-			state=true;
-		}
-		moving_time=millis();
-	}
+//	static uint32_t moving_time=millis();
+//	static bool state=false;
+//	if(millis()-moving_time>100000000){
+//		if(state) {
+//			PID_set_position_setpoint(25);
+//			state=false;
+//		}
+//		else{
+//			PID_set_position_setpoint(-25);
+//			state=true;
+//		}
+//		moving_time=millis();
+//	}
 }
