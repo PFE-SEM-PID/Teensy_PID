@@ -36,6 +36,21 @@ pwm_envoye = []
 erreur_derivative = []
 erreur_integrale = []
 
+
+def step_backward():
+    start()
+    serial_port.write("p\n")
+    serial_port.write("-25\n")
+    time.sleep(0.5)
+    stop()
+
+def step_forward():
+    start()
+    serial_port.write("p\n")
+    serial_port.write("25\n")
+    time.sleep(0.5)
+    stop()
+
 def start():
     global recording
     recording = True
@@ -65,36 +80,6 @@ def stop():
         erreur_integrale = []
         plotting = False
 
-def step_forward():
-    start()
-    serial_port.write("p\n")
-    serial_port.write("25\n")
-    time.sleep(0.2)
-    stop()
-def step_backward():
-    start()
-    serial_port.write("p\n")
-    serial_port.write("-25\n")
-    time.sleep(0.2)
-    stop()
-
-"""
-def record_data():
-    global recording
-    if recording == True:
-        if serial_port.isOpen():
-            print"ok"
-            data = str(serial_port.readline())
-            print(data)
-            list_data = data.split()
-            timestamp.append(list_data[0])
-            setpoint.append(list_data[1])
-            pos_encodeur.append(list_data[2])
-            pwm_envoye.append(list_data[3])
-            erreur_proportionnelle.append(list_data[4])
-            erreur_derivative.append(list_data[5])
-            erreur_integrale.append(list_data[6])
-"""
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
     global val, w, root
@@ -279,32 +264,29 @@ class New_Toplevel:
         self.Label1.configure(text='''PID TUNING''')
         self.Label1.configure(width=174)
 
-        self.Button1 = Button(top, command=step_backward())
-        self.Button1.place(relx=0.017, rely=0.711, height=24, width=60)
-        self.Button1.configure(activebackground="#d9d9d9")
-        self.Button1.configure(activeforeground="#000000")
-        self.Button1.configure(background="#d9d9d9")
-        self.Button1.configure(disabledforeground="#a3a3a3")
-        self.Button1.configure(foreground="#000000")
-        self.Button1.configure(highlightbackground="#d9d9d9")
-        self.Button1.configure(highlightcolor="black")
-        self.Button1.configure(pady="0")
-        self.Button1.configure(text='''-25 tick''')
-        self.Button1.configure(width=60)
+        self.tick_down = Button(top, command=step_backward)
+        self.tick_down.place(relx=0.033, rely=0.733, height=24, width=55)
+        self.tick_down.configure(activebackground="#d9d9d9")
+        self.tick_down.configure(activeforeground="#000000")
+        self.tick_down.configure(background="#d9d9d9")
+        self.tick_down.configure(disabledforeground="#a3a3a3")
+        self.tick_down.configure(foreground="#000000")
+        self.tick_down.configure(highlightbackground="#d9d9d9")
+        self.tick_down.configure(highlightcolor="black")
+        self.tick_down.configure(pady="0")
+        self.tick_down.configure(text='''-25 ticks''')
 
-        self.Button1_1 = Button(top, command=step_forward())
-        self.Button1_1.place(relx=0.133, rely=0.711, height=24, width=57)
-        self.Button1_1.configure(activebackground="#d9d9d9")
-        self.Button1_1.configure(activeforeground="#000000")
-        self.Button1_1.configure(background="#d9d9d9")
-        self.Button1_1.configure(disabledforeground="#a3a3a3")
-        self.Button1_1.configure(foreground="#000000")
-        self.Button1_1.configure(highlightbackground="#d9d9d9")
-        self.Button1_1.configure(highlightcolor="black")
-        self.Button1_1.configure(pady="0")
-        self.Button1_1.configure(text='''+25 tick''')
-        self.Button1_1.configure(width=60)
-
+        self.tick_up = Button(top, command=step_forward)
+        self.tick_up.place(relx=0.15, rely=0.733, height=24, width=55)
+        self.tick_up.configure(activebackground="#d9d9d9")
+        self.tick_up.configure(activeforeground="#000000")
+        self.tick_up.configure(background="#d9d9d9")
+        self.tick_up.configure(disabledforeground="#a3a3a3")
+        self.tick_up.configure(foreground="#000000")
+        self.tick_up.configure(highlightbackground="#d9d9d9")
+        self.tick_up.configure(highlightcolor="black")
+        self.tick_up.configure(pady="0")
+        self.tick_up.configure(text='''+25 ticks''')
 
     def set_kp(self):
         kp = self.entry_kp.get()
@@ -329,6 +311,7 @@ class MyThread(threading.Thread):
             while recording == True:
                 if serial_port.isOpen():
                     data = str(serial_port.readline())
+                    print(data)
                     list_data = data.split()
                     if(list_data[0] != "ORDER"):
                         timestamp.append(int(list_data[0]))
@@ -338,28 +321,6 @@ class MyThread(threading.Thread):
                         erreur_derivative.append(float(list_data[4]))
                         erreur_integrale.append(float(list_data[5]))
                         plotting = True
-            """
-            if recording == False and plotting == True:
-                retranchage = int(timestamp[0])
-                for i in range(len(timestamp)):
-                    timestamp[i] = int(timestamp[i]) - retranchage
-                print(timestamp)
-                print(pos_encodeur)
-                print(len(timestamp))
-                print(len(pos_encodeur))
-                #plt.plot(timestamp, pos_encodeur)
-                #plt.show()
-                plt.plot(timestamp, pos_encodeur)
-                plt.ion()
-                plt.show()
-                #timestamp = []
-                #setpoint = []
-                #pos_encodeur = []
-                #pwm_envoye = []
-                #erreur_derivative = []
-                #erreur_integrale = []
-                plotting = False
-                """
 
 
 
