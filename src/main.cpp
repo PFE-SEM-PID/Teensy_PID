@@ -26,10 +26,11 @@ void loop() {
 		Serial.print("ORDER ");Serial.println(order);
 		if (compare_strings(order, "r")) {//reset
 			motor_reset_pos();
-		} else if (compare_strings(order, "p")) {
+		} else if (compare_strings(order, "i")) {
 			PID_read_setpoint();
-		}
-		else if(compare_strings(order, "kp")){
+		} else if (compare_strings(order, "p")){
+			PID_increment_setpoint();
+		} else if(compare_strings(order, "kp")){
 			set_tuning(&pos_kp);
 		}
 		else if(compare_strings(order, "ki")){

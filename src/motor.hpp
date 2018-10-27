@@ -1,11 +1,11 @@
 #ifndef TEENSYLC_PID_MOTOR_HPP
 #define TEENSYLC_PID_MOTOR_HPP
 
-
 #include <Arduino.h>
 #include <IntervalTimer.h>
 #include "encoder.hpp"
 #include "pid.hpp"
+
 //PINS & LIMITS
 #define INA 		4
 #define INB 		5
@@ -15,15 +15,15 @@
 #define MAX_PWM	255
 #define FREQ_ASSERV	100 //Hz
 #define PERIODE_ASSERV	1000000/FREQ_ASSERV	//us
+
 //ASSERVISSEMENT
 //CONSTANTES & PID
-float pos_kp=4;
+float pos_kp=8;
 float pos_ki=1;
 float pos_kd=7;
 float speed_kp=0.2;
 float speed_ki=0.08;
 float speed_kd=0.01;
-
 bool speed_controlled=false;
 
 PID position_pid(&pos_kp, &pos_ki, &pos_kd);
@@ -145,15 +145,16 @@ void PID_set_position_setpoint(int32_t new_setpoint){
 	position_pid.set_set_point(new_setpoint);
 }
 
-
-void PID_read_setpoint(){
+void PID_increment_setpoint(){
 	Serial.setTimeout(5000);
 	PID_set_position_setpoint(Serial.parseInt());
 	Serial.setTimeout(50);
 }
 
-
-
-
+void PID_read_setpoint(){
+	Serial.setTimeout(5000);
+	PID_set_position_setpoint(static_cast<int32_t>(position_pid.get_setpoint())+Serial.parseInt());
+	Serial.setTimeout(50);
+}
 
 #endif //TEENSYLC_PID_MOTOR_HPP
