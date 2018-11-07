@@ -10,6 +10,7 @@
 import sys
 import time
 import threading
+import csv
 
 
 from serial import *
@@ -314,6 +315,7 @@ class MyThread(threading.Thread):
                     print(data)
                     list_data = data.split()
                     if(list_data[0] != "ORDER"):
+                        c.writerow(["Timestamp", "setpoint", "pos_encodeur", "pwm_envoye", "erreur_derivative", "erreur_integrale"])
                         timestamp.append(int(list_data[0]))
                         setpoint.append(float(list_data[1]))
                         pos_encodeur.append(float(list_data[2]))
@@ -325,7 +327,8 @@ class MyThread(threading.Thread):
 
 
 if __name__ == '__main__':
-    #serial_port = Serial(port="COM7", baudrate=9600)
+    serial_port = Serial(port="COM7", baudrate=9600)
     Thread = MyThread()
     Thread.start()
+    c = csv.writer(open("MONFICHIER.csv", "wb"))
     vp_start_gui()
