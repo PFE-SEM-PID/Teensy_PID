@@ -6,14 +6,9 @@
 
 void setup() {
 	Serial.begin(9600);
-	// pinMode H bridge
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, HIGH);
-
 	motor_init();
-	encoder_init();
-
-//	Serial.println("SETUP OK");
 }
 
 void loop() {
@@ -50,22 +45,5 @@ void loop() {
 		else if(compare_strings(order, "stop")){
 			recording=false;
 		}
-		else{
-//			Serial.println("ordre inconnu");
-		}
 	}
-
-//	static uint32_t moving_time=millis();
-//	static bool state=false;
-//	if(millis()-moving_time>100000000){
-//		if(state) {
-//			PID_set_position_setpoint(25);
-//			state=false;
-//		}
-//		else{
-//			PID_set_position_setpoint(-25);
-//			state=true;
-//		}
-//		moving_time=millis();
-//	}
 }
