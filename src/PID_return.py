@@ -37,6 +37,9 @@ pwm_envoye = []
 erreur_derivative = []
 erreur_integrale = []
 
+ki = 0
+kp = 0
+kd = 0
 
 def step_backward():
     start()
@@ -62,11 +65,13 @@ def stop():
     global recording,plotting, timestamp, setpoint, pos_encodeur, pwm_envoye, erreur_derivative, erreur_integrale
     recording = False
     serial_port.write("stop\n")
-    time.sleep(0.010)
+    print(len(timestamp))
     if recording == False and plotting == True:
         retranchage = int(timestamp[0])
+        print(retranchage)
         for i in range(len(timestamp)):
             timestamp[i] = int(timestamp[i]) - retranchage
+        print(timestamp)
         # plt.plot(timestamp, pos_encodeur)
         # plt.show()
         plt.close()
@@ -80,6 +85,25 @@ def stop():
         erreur_derivative = []
         erreur_integrale = []
         plotting = False
+
+class MyThread(threading.Thread):
+    def run(self):
+        global recording, plotting, timestamp, setpoint, pos_encodeur, pwm_envoye, erreur_derivative, erreur_integrale
+        while True:
+            while recording == True:
+                if serial_port.isOpen():
+                    data = str(serial_port.readline())
+                    list_data = data.split()
+                    if(list_data[0] != "ORDER"):
+                        #c.writerow(["Timestamp", "setpoint", "pos_encodeur", "pwm_envoye", "erreur_derivative", "erreur_integrale"])
+                        c.writerow(list_data)
+                        timestamp.append(int(list_data[0]))
+                        setpoint.append(float(list_data[1]))
+                        pos_encodeur.append(float(list_data[2]))
+                        pwm_envoye.append(float(list_data[3]))
+                        erreur_derivative.append(float(list_data[4]))
+                        erreur_integrale.append(float(list_data[5]))
+                        plotting = True
 
 def vp_start_gui():
     '''Starting point when module is the main routine.'''
@@ -103,7 +127,6 @@ def destroy_New_Toplevel():
     global w
     w.destroy()
     w = None
-
 
 class New_Toplevel:
     def __init__(self, top=None):
@@ -304,31 +327,9 @@ class New_Toplevel:
         serial_port.write("kd\n")
         serial_port.write(kd+"\n")
 
-
-class MyThread(threading.Thread):
-    def run(self):
-        global recording, plotting, timestamp, setpoint, pos_encodeur, pwm_envoye, erreur_derivative, erreur_integrale
-        while True:
-            while recording == True:
-                if serial_port.isOpen():
-                    data = str(serial_port.readline())
-                    print(data)
-                    list_data = data.split()
-                    if(list_data[0] != "ORDER"):
-                        c.writerow(["Timestamp", "setpoint", "pos_encodeur", "pwm_envoye", "erreur_derivative", "erreur_integrale"])
-                        timestamp.append(int(list_data[0]))
-                        setpoint.append(float(list_data[1]))
-                        pos_encodeur.append(float(list_data[2]))
-                        pwm_envoye.append(float(list_data[3]))
-                        erreur_derivative.append(float(list_data[4]))
-                        erreur_integrale.append(float(list_data[5]))
-                        plotting = True
-
-
-
 if __name__ == '__main__':
     serial_port = Serial(port="COM7", baudrate=9600)
+    c = csv.writer(open("MONFICHIER.csv", "wb"))
     Thread = MyThread()
     Thread.start()
-    c = csv.writer(open("MONFICHIER.csv", "wb"))
     vp_start_gui()
