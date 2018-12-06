@@ -20,17 +20,14 @@ public:
 
 	double compute(double input){
 		error=setpoint-input;
-		derivative_error=error-last_error;
+		derivative_error=*kd*(error-last_error);
 		integral_error+=*ki*error;
 		last_input=input;
 		last_error=error;
 		//Anti windup
 		if(integral_error>PWM_MAX) integral_error=PWM_MAX;
 		else if(integral_error<-PWM_MAX) integral_error=-PWM_MAX;
-		if(error==0 && last_error==0){
-			integral_error=0;
-		}
-		output=*kp*error+integral_error+*kd*derivative_error;
+		output=*kp*error+integral_error+derivative_error;
 		//Limitation à des valeurs 8bits
 		if(output>PWM_MAX) output=PWM_MAX;
 		else if(output<-PWM_MAX) output=-PWM_MAX;
